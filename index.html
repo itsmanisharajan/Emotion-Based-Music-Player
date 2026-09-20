@@ -1,92 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Emotion-Based Music Player</title>
-  <!-- Load FontAwesome icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css">
+  <meta name="description" content="A fast, modern music player that detects your mood from facial expressions and plays matching music." />
 
-  <!-- Load the custom CSS style file -->
-  <link rel="stylesheet" type="text/css" href="style.css">
-  
-  <!-- Open Graph meta tags for better social sharing -->
-  <meta property="og:title" content="Emotion-Based Music Player">
-  <meta property="og:description" content="A music player that detects your mood from facial expressions and plays matching music.">
-  <meta property="og:image" content="assets/images/preview.jpg">
-  
-  <!-- Face API library for facial expression detection -->
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/face-api.js/0.22.2/face-api.min.js"></script>
+  <!-- Open Graph -->
+  <meta property="og:title" content="Emotion-Based Music Player" />
+  <meta property="og:description" content="A music player that detects your mood from facial expressions and plays matching music." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="assets/images/preview.jpg" />
+
+  <!-- Preconnect for the (lazily loaded) face-api CDN -->
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+
+  <!-- Icons (deferred, non-blocking) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    media="print"
+    onload="this.media='all'"
+  />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
 </head>
 <body>
-  <div class="player">
-    <!-- Page title -->
+  <main class="player" aria-label="Emotion-based music player">
     <h1 class="title">Emotion-Based Music Player</h1>
-    
-    <!-- Error messages container -->
-    <div id="error-container"></div>
-    
-    <!-- New Search Section -->
-    <div class="search-section">
+
+    <!-- Toast / error notifications -->
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Search + webcam -->
+    <section class="search-section" aria-label="Search">
       <div class="search-container">
-        <input type="text" id="search-input" placeholder="Search for songs or moods...">
-        <button id="search-btn"><i class="fa fa-search"></i></button>
+        <label for="search-input" class="visually-hidden">Search songs or moods</label>
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Search songs or moods (happy, calm, relaxed)…"
+          autocomplete="off"
+        />
+        <button id="search-btn" type="button" aria-label="Search">
+          <i class="fa fa-search" aria-hidden="true"></i>
+        </button>
       </div>
-      <div class="webcam-container">
-        <button id="webcam-btn" title="Search by facial expression"><i class="fa fa-camera"></i></button>
-        <div id="webcam-modal" class="modal">
-          <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <h3>Facial Expression Search</h3>
-            <div id="webcam-wrapper">
-              <video id="webcam" autoplay playsinline></video>
-              <canvas id="canvas" style="display: none;"></canvas>
-            </div>
-            <div class="webcam-controls">
-              <button id="capture-btn">Capture Expression</button>
-              <button id="search-expression-btn" disabled>Search</button>
-            </div>
-            <div id="expression-result"></div>
-          </div>
-        </div>
-      </div>
+      <button id="webcam-btn" type="button" title="Search by facial expression" aria-label="Search by facial expression">
+        <i class="fa fa-camera" aria-hidden="true"></i>
+      </button>
+    </section>
+
+    <!-- Now playing -->
+    <section class="details" aria-label="Now playing">
+      <p class="now-playing">PLAYING x OF y</p>
+      <div class="track-art" role="img" aria-label="Album art"></div>
+      <p class="track-name">Track Name</p>
+      <p class="track-artist">Track Artist</p>
+    </section>
+
+    <!-- Transport controls -->
+    <section class="buttons" aria-label="Playback controls">
+      <button class="prev-track" type="button" aria-label="Previous track">
+        <i class="fa fa-step-backward fa-2x" aria-hidden="true"></i>
+      </button>
+      <button class="playpause-track" type="button" aria-label="Play or pause">
+        <i class="fa fa-play-circle fa-5x" aria-hidden="true"></i>
+      </button>
+      <button class="next-track" type="button" aria-label="Next track">
+        <i class="fa fa-step-forward fa-2x" aria-hidden="true"></i>
+      </button>
+    </section>
+
+    <!-- Seek -->
+    <div class="slider_container">
+      <span class="current-time">00:00</span>
+      <label for="seek_slider" class="visually-hidden">Seek</label>
+      <input type="range" id="seek_slider" min="0" max="100" value="0" step="0.1" class="seek_slider" />
+      <span class="total-duration">00:00</span>
     </div>
 
-    <div class="details">
-      <div class="now-playing">PLAYING x OF y</div>
-      <div class="track-art"></div>
-      <div class="track-name">Track Name</div>
-      <div class="track-artist">Track Artist</div>
-    </div>
-    <div class="buttons">
-      <div class="prev-track" onclick="prevTrack()"><i class="fa fa-step-backward fa-2x"></i></div>
-      <div class="playpause-track" onclick="playpauseTrack()"><i class="fa fa-play-circle fa-5x"></i></div>
-      <div class="next-track" onclick="nextTrack()"><i class="fa fa-step-forward fa-2x"></i></div>
-    </div>
+    <!-- Volume -->
     <div class="slider_container">
-      <div class="current-time">00:00</div>
-      <input type="range" min="1" max="100" value="0" class="seek_slider" onchange="seekTo()">
-      <div class="total-duration">00:00</div>
+      <i class="fa fa-volume-down" aria-hidden="true"></i>
+      <label for="volume_slider" class="visually-hidden">Volume</label>
+      <input type="range" id="volume_slider" min="0" max="100" value="80" class="volume_slider" />
+      <i class="fa fa-volume-up" aria-hidden="true"></i>
     </div>
-    <div class="slider_container">
-      <i class="fa fa-volume-down"></i>
-      <input type="range" min="1" max="100" value="99" class="volume_slider" onchange="setVolume()">
-      <i class="fa fa-volume-up"></i>
-    </div>
-    
-    <!-- Reshuffle button -->
+
     <div class="reshuffle-container">
-      <button id="reshuffle-btn" onclick="reshuffleTracks()"><i class="fa fa-random"></i> Reshuffle</button>
+      <button id="reshuffle-btn" type="button">
+        <i class="fa fa-random" aria-hidden="true"></i> Reshuffle
+      </button>
     </div>
-    
-    <!-- Footer -->
+
     <footer>
-      <p>Created by [Your Name] | <a href="https://github.com/yourusername/Emotion-Based-Music-Player" target="_blank">View on GitHub</a></p>
+      <p>
+        Emotion-Based Music Player •
+        <a href="https://github.com/" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+      </p>
     </footer>
+  </main>
+
+  <!-- Webcam modal (face-api.js is loaded lazily when opened) -->
+  <div id="webcam-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="webcam-modal-title" hidden>
+    <div class="modal-content">
+      <button class="close-btn" type="button" aria-label="Close">&times;</button>
+      <h2 id="webcam-modal-title">Facial Expression Search</h2>
+      <div id="webcam-wrapper">
+        <video id="webcam" autoplay playsinline muted></video>
+        <canvas id="canvas" hidden></canvas>
+      </div>
+      <div class="webcam-controls">
+        <button id="capture-btn" type="button">Capture Expression</button>
+        <button id="search-expression-btn" type="button" disabled>Search</button>
+      </div>
+      <div id="expression-result" aria-live="polite"></div>
+    </div>
   </div>
 
-  <!-- Load the main script for the player -->
-  <script src="main.js"></script>
-  <script src="webcam.js"></script>
+  <!-- Single ES module entry point -->
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
